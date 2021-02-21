@@ -5,6 +5,10 @@ import tarfile
 
 
 def getargs(args_array=sys.argv[1:]):
+    """ Argument parser
+    :param args_array: Returns array with defined arguments
+    :return:
+    """
     default_path = os.path.dirname(__file__).split("helperFunctions")[0]
 
     parser = ArgumentParser(description='TODO: Description of this module')
@@ -15,11 +19,11 @@ def getargs(args_array=sys.argv[1:]):
                         default=os.path.join(default_path, 'input'),
                         help="set input path")
 
-    parser.add_argument("--input_file",
+    parser.add_argument("--max_cloud_cover",
                         # action="store_true",
-                        dest="input_file",
-                        default=os.path.join(default_path, 'input'),
-                        help="set input file")
+                        dest="max_cloud_cover",
+                        default=5,
+                        help="set maximum cloud cover")
 
     parser.add_argument("--user",
                         # action="store_true",
@@ -27,11 +31,11 @@ def getargs(args_array=sys.argv[1:]):
                         default="user",
                         help="earth explorer user name")
 
-    parser.add_argument("--linkstats_file2",
+    parser.add_argument("--dataset",
                         # action="store_true",
-                        dest="linkstats_file2",
-                        default=os.path.join(default_path, 'input'),
-                        help="set input linkstats file")
+                        dest="dataset",
+                        default="LANDSAT_8_C1",
+                        help="set dataset type for download (e.q. LANDSAT_TM_C1, LANDSAT_ETM_C1, LANDSAT_8_C1, and SENTINEL_2A)")
 
     parser.add_argument("--pwd",
                         # action="store_true",
@@ -57,57 +61,40 @@ def getargs(args_array=sys.argv[1:]):
                         default=os.path.join(default_path, 'output'),
                         help="set output file")
 
-    parser.add_argument("--counts_file",
+    parser.add_argument("--start_date",
                         # action="store_true",
-                        dest="counts_file",
-                        default=os.path.join(default_path, 'input'),
-                        help="set input counts file")
+                        dest="start_date",
+                        default='2002-10-01',
+                        help="start date of search period")
 
-    parser.add_argument("--network_file",
+    parser.add_argument("--end_date",
                         # action="store_true",
-                        dest="network_file",
-                        default=os.path.join(default_path, 'input'),
-                        help="set input network file")
+                        dest="end_date",
+                        default='2003-10-30',
+                        help="end date of search period")
 
-    parser.add_argument("--table_name",
-                        # action="store_true",
-                        dest="table_name",
-                        default=os.path.join(default_path, 'input'),
-                        help="set input table name from PostgreSql database")
+    my_args = parser.parse_args(args_array)
 
-    parser.add_argument("--study_area",
-                        # action="store_true",
-                        dest="study_area",
-                        default=os.path.join(default_path, 'input'),
-                        help="set input study area file")
-
-    parser.add_argument("--bool_test",
-                        # action="store_true",
-                        dest="b_test",
-                        # default="",
-                        type=bool,
-                        help="set output path")
-
-    parser.add_argument("--int_test",
-                        # action="store_true",
-                        dest="i_test",
-                        default=0,
-                        type=int,
-                        help="set output path")
-
-    parser.add_argument("--float_test",
-                        # action="store_true",
-                        dest="f_test",
-                        default=0,
-                        type=float,
-                        help="set output path")
-
-    myargs = parser.parse_args(args_array)
-
-    return myargs
+    return my_args
 
 
 def open_tarfile_function(path, filename):
-    open_tarfile=tarfile.open(os.path.join(path, filename))
+    """Extracts zipped files
+
+    :param path: file path
+    :param filename: file name
+    :return:
+    """
+    open_tarfile = tarfile.open(os.path.join(path, filename))
     open_tarfile.extractall(path=path)
     open_tarfile.close()
+
+
+def create_path(path):
+    """Creates file path if it not exists
+
+    :param path: file path
+    :return:
+    """
+    if not os.path.exists(path):
+        os.makedirs(path)
