@@ -42,6 +42,7 @@ def prepare_data(args):
 
     print()
     print("reproject raster to epsg:3857 and clip to bbox extend of aoi for files:")
+    create_path(os.path.join(args.output_path, "proj"))
     composite_dict = defaultdict(list)
     for file in geo_files:
         if file.split("_")[-1] in red_green_blue.get(file.split("_")[0], []):
@@ -80,6 +81,7 @@ def prepare_data(args):
             'OUTPUT': composite_file})
 
         # create masked file based on building gpkg
+        create_path(os.path.join(args.output_path, "mask"))
         out_file_mask = os.path.join(args.output_path, "mask", "{}.tif".format(mask_file))
         processing.run("gdal:cliprasterbymasklayer", {
             'INPUT': composite_file,
