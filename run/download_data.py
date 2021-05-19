@@ -36,9 +36,9 @@ def download_data(args):
     create_path(args.output_path)
     ee = EarthExplorer(usr_pw['user'], usr_pw['password'])
     for scene in scenes:
-        ee.download(scene_id=scene['entityId'], output_dir=args.output_path)
+        ee.download(identifier=scene['entity_id'], output_dir=args.output_path)
         open_tarfile_function(path=args.output_path,
-                              filename=os.path.join(args.output_path, scene['displayId'] + ".tar.gz"))
+                              filename=os.path.join(args.output_path, scene['display_id'] + ".tar.gz"))
 
     ee.logout()
 
