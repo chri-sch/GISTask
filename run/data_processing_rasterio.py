@@ -1,7 +1,7 @@
 from shapely.geometry import box, Polygon
 
 from helperFunctions.gen_functions import getargs, create_path, resample_raster, reproject_raster, \
-    mask_raster_with_geometry
+    mask_raster_with_geometry, get_tiles
 from os import listdir
 from os.path import isfile, join
 import os
@@ -10,6 +10,7 @@ from fiona.crs import from_epsg
 import geopandas as gpd
 import rasterio
 import rasterio.mask
+import numpy as np
 from rasterio.warp import calculate_default_transform, reproject, Resampling
 
 
@@ -64,8 +65,30 @@ def data_cropping(args):
                 mask_array, mask_meta = mask_raster_with_geometry(raster=proj_image.squeeze(0),
                                                                   transform=proj_transformation,
                                                                   shapes=buildings.geometry)
+                mask_meta['crs'] = proj_profile.data['crs']
                 with rasterio.open(out_file_mask, "w", **mask_meta) as mask:
                     mask.write(mask_array)
+
+                meta = mask_meta.copy()
+                tile_path = os.path.join(args.output_path, 'tiles', out_file_mask.split("\\")[-1].split(".TIF")[0])
+                create_path(tile_path)
+                output_filename = 'tile_{}-{}.tif'
+                for window, transform in get_tiles(mask_meta):
+                    print(window)
+                    meta['transform'] = transform
+                    meta['width'], meta['height'] = window.width, window.height
+                    outpath = os.path.join(tile_path, output_filename.format(int(window.col_off), int(window.row_off)))
+
+                    idx_from_h = window.row_off
+                    idx_to_h = window.height + window.row_off
+                    idx_from_w = window.col_off
+                    idx_to_w = window.width + window.col_off
+
+                    tile_array = mask_array[:, idx_from_h:idx_to_h, idx_from_w:idx_to_w]
+
+                    # print(tile_array.shape, np.max(tile_array))
+                    with rasterio.open(outpath, 'w', **meta) as outds:
+                        outds.write(tile_array)
 
 
 if __name__ == "__main__":

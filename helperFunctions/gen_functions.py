@@ -4,6 +4,8 @@ import sys
 import tarfile
 import rasterio
 from rasterio.warp import calculate_default_transform, Resampling, reproject
+from itertools import product
+from rasterio import windows
 
 
 def getargs(args_array=sys.argv[1:]):
@@ -248,3 +250,13 @@ def mask_raster_with_geometry(raster, transform, shapes, **kwargs):
         with memfile.open() as dataset:
             output, _ = rasterio.mask.mask(dataset, shapes, **kwargs)
     return output, dataset.meta
+
+
+def get_tiles(ds, width=256, height=256):
+    nols, nrows = ds['width'], ds['height']
+    offsets = product(range(0, nols, width), range(0, nrows, height))
+    big_window = windows.Window(col_off=0, row_off=0, width=nols, height=nrows)
+    for col_off, row_off in offsets:
+        window = windows.Window(col_off=col_off, row_off=row_off, width=width, height=height).intersection(big_window)
+        transform = windows.transform(window, ds['transform'])
+        yield window, transform
