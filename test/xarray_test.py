@@ -4,6 +4,7 @@ import rasterio
 import matplotlib.pyplot as plt
 import geopandas as gpd
 from shapely.geometry import Polygon
+from rasterio.plot import show
 
 from helperFunctions.gen_functions import getargs
 import shapely
@@ -39,4 +40,5 @@ data = clipped.band_data.data
 
 clipped.band_data.rio.to_raster("planet_scope_green.tif")
 plt.imshow(data[0], cmap='RdYlGn')
+
 plt.show()
