@@ -1,27 +1,30 @@
 import rasterio
 import numpy as np
-from rasterio.plot import show
 
-url = 'https://gis.stmk.gv.at/arcgis/services/OGD/ALSGelaendeinformation_1m_UTM33N/MapServer/WmsServer?service=WMS&version=1.1.1&request=GetMap&layers=Gelaendehoehe_Gesamtmodell&styles=&width=1682&height=849&srs=EPSG:32633&bbox=515640.5190082641,5202075.827014463,551284.7214876037,5220046.445764463&format=image/png&transparent=FALSE&bgcolor=0xFFFFFF&exceptions=application/vnd.ogc.se_xml'
+TMS_dataset = rasterio.open(
+    'https://gis.stmk.gv.at/arcgis/services/OGD/ALSGelaendeinformation_1m_UTM33N/MapServer/WmsServer?service=WMS&version=1.1.1&request=GetMap&layers=Gelaendehoehe_Gesamtmodell&styles=&width=1682&height=849&srs=EPSG:32633&bbox=515640.5190082641,5202075.827014463,551284.7214876037,5220046.445764463&format=image/png&transparent=FALSE&bgcolor=0xFFFFFF&exceptions=application/vnd.ogc.se_xml')
 
-# url ='https://services.terrascope.be/wms/v2?service=WMS&version=1.3.0&request=GetMap&layers=CGS_S2_RADIOMETRY&format=image/png&time=2020-06-01&width=1920&height=592&bbox=556945.9710290054,6657998.9149440415,575290.8578174476,6663655.255037144&styles=&srs=EPSG:3857'
+with rasterio.open('resampled.tif', 'w', **profile) as dst:
+    dst.write_band(1, data[0])
 
-raster = rasterio.open("C:\\Users\\chri\\Documents\\clip.tif")
+# Calculate the pixel positions of the desired bounding box at the highest zoom level
+# as specified in the XML file.
+bl = TMS_dataset.index(west, south, op=math.floor)
+tr = TMS_dataset.index(east, north, op=math.ceil)
+# image_size is a tuple (h, w, num_bands)
+output_dataset = np.empty(shape=image_size, dtype=TMS_dataset.profile['dtype'])
 
-# print(raster.meta)
-print(raster.transform[0])
-print(raster.transform[1])
-print(raster.transform[2])
-print(raster.transform[3])
-print(raster.transform[4])
-print(raster.transform[5])
-rasterio.Affine(raster.transform[0], raster.transform[1], raster.transform[2], raster.transform[3], raster.transform[4],
-                raster.transform[5])
-show(raster)
+# Read each band
+TMS_dataset.read(1, out=output_dataset[:, :, 0], window=((tr[0], bl[0]), (bl[1], tr[1])))
+TMS_dataset.read(2, out=output_dataset[:, :, 1], window=((tr[0], bl[0]), (bl[1], tr[1])))
+TMS_dataset.read(3, out=output_dataset[:, :, 2], window=((tr[0], bl[0]), (bl[1], tr[1])))
 
-"""
-516498.8203000000212342,
-5165414.9053999995812774 : 
-593041.2793000000528991,
-5222964.1984000001102686
-"""
+# Create an output image dataset
+output_image = rasterio.open('flange3.png', 'w', driver='png', width=image_size[1], height=image_size[0], count=3,
+                             dtype=output_dataset.dtype)
+# Write each band
+output_image.write(output_dataset[:, :, 0], 1)
+output_image.write(output_dataset[:, :, 1], 2)
+output_image.write(output_dataset[:, :, 2], 3)
+
+output_image.close()
