@@ -85,6 +85,9 @@ def download_wms(args):
     width = abs(bbox[2] - bbox[0])
     height = abs(bbox[3] - bbox[1])
 
+    srs = osr.SpatialReference()
+    srs.ImportFromEPSG(int(crs.split(":")[1]))
+
     i = 0
     for y_width in np.arange(bbox_area[1], bbox_area[3], height):
         for x_width in np.arange(bbox_area[0], bbox_area[2], width):
@@ -121,7 +124,7 @@ def download_wms(args):
                         'height': dataset.meta['height']
                     })
                     # show(dataset)
-                    fn = 'C:/temp/new_raster.tif'
+                    fn = 'D:/temp/new_raster.tif'
                     driver = gdal.GetDriverByName('GTiff')
                     data_array = dataset.read()
                     ds = driver.Create(fn, xsize=size[0], ysize=size[1], bands=3, eType=gdal.GDT_Float32)
@@ -129,12 +132,11 @@ def download_wms(args):
                     ds.GetRasterBand(2).WriteArray(data_array[1, :, :])
                     ds.GetRasterBand(3).WriteArray(data_array[2, :, :])
 
-                    geot = [bbox[0], transform[0], 0, bbox[-1], 0, transform[4]]
+                    geot = (transform[2], transform[0], 0, transform[5], 0, transform[4])
                     ds.SetGeoTransform(geot)
-                    srs = osr.SpatialReference()
-                    srs.SetWellKnownGeogCS(crs)
+
+                    ds.SetProjection(srs.ExportToWkt())
                     ds = None
-                    sys.exit(0)
 
                     path = os.path.join(args.output_path, 'wms')
                     create_path(os.path.join(args.output_path, 'wms'))
@@ -142,6 +144,7 @@ def download_wms(args):
                     with rasterio.open(file, 'w', **meta_data) as outds:
                         outds.write(dataset.read())
 
+                    sys.exit(0)
             i += 1
 
 
