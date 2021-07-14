@@ -6,6 +6,21 @@ import rasterio
 from rasterio.warp import calculate_default_transform, Resampling, reproject
 from itertools import product
 from rasterio import windows
+import math
+
+# Standard pixel size of 0.28 mm as defined by WMTS.
+METERS_PER_PIXEL = 0.28e-3
+_WGS84_METERS_PER_UNIT = 2 * math.pi * 6378137 / 360
+
+METERS_PER_UNIT = {
+    'urn:ogc:def:crs:EPSG::27700': 1,
+    'urn:ogc:def:crs:EPSG::900913': 1,
+    'urn:ogc:def:crs:OGC:1.3:CRS84': _WGS84_METERS_PER_UNIT,
+    'urn:ogc:def:crs:EPSG::3031': 1,
+    'urn:ogc:def:crs:EPSG::3413': 1,
+    'urn:ogc:def:crs:EPSG::3857': 1,
+    'urn:ogc:def:crs:EPSG:6.18.3:3857': 1
+}
 
 
 def getargs(args_array=sys.argv[1:]):
@@ -260,3 +275,12 @@ def get_tiles(ds, width=256, height=256):
         window = windows.Window(col_off=col_off, row_off=row_off, width=width, height=height).intersection(big_window)
         transform = windows.transform(window, ds['transform'])
         yield window, transform
+
+
+def _tile_span(tile_matrix, meters_per_unit):
+
+    pixel_span = (tile_matrix.scaledenominator *
+                  (METERS_PER_PIXEL / meters_per_unit))
+    tile_span_x = tile_matrix.tilewidth * pixel_span
+    tile_span_y = tile_matrix.tileheight * pixel_span
+    return tile_span_x, tile_span_y
