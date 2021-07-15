@@ -20,8 +20,8 @@ def download_data(args):
     # Finding scenes for Graz (47.069888, 15.437851)
     scenes = api.search(
         dataset=args.dataset,
-        latitude=47.069888,
-        longitude=15.437851,
+        latitude=17.5473,
+        longitude=-92.5043,
         start_date=args.start_date,
         end_date=args.end_date,
         max_cloud_cover=args.max_cloud_cover)
@@ -37,8 +37,8 @@ def download_data(args):
     ee = EarthExplorer(usr_pw['user'], usr_pw['password'])
     for scene in scenes:
         ee.download(identifier=scene['entity_id'], output_dir=args.output_path)
-        open_tarfile_function(path=args.output_path,
-                              filename=os.path.join(args.output_path, scene['display_id'] + ".tar.gz"))
+        # open_tarfile_function(path=args.output_path,
+        #                       filename=os.path.join(args.output_path, scene['display_id'] + ".tar.gz"))
 
     ee.logout()
 

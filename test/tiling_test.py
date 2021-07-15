@@ -3,8 +3,8 @@ from itertools import product
 import rasterio as rio
 from rasterio import windows
 
-in_path = 'D:/PycharmProjects/GISTask/output/mask/'
-input_filename = 'LC08_L1TP_190027_20130618_20170503_01_T1_B2_rasterio_mask.TIF'
+in_path = 'C:/_data/vexcel/_subsets/_wmts/compressed/'
+input_filename = '_merged.tif'
 
 out_path = 'D:/PycharmProjects/GISTask/output/tiles/'
 output_filename = 'tile_{}-{}.tif'

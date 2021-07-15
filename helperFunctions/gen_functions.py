@@ -53,7 +53,7 @@ def getargs(args_array=sys.argv[1:]):
     parser.add_argument("--dataset",
                         # action="store_true",
                         dest="dataset",
-                        default="LANDSAT_8_C1",
+                        default="SENTINEL_2A",
                         help="set dataset type for download (e.q. LANDSAT_TM_C1, LANDSAT_ETM_C1, LANDSAT_8_C1, and SENTINEL_2A)")
 
     parser.add_argument("--pwd",
@@ -83,13 +83,13 @@ def getargs(args_array=sys.argv[1:]):
     parser.add_argument("--start_date",
                         # action="store_true",
                         dest="start_date",
-                        default='2002-10-01',
+                        default='2021-04-01',
                         help="start date of search period")
 
     parser.add_argument("--end_date",
                         # action="store_true",
                         dest="end_date",
-                        default='2014-10-30',
+                        default='2021-04-31',
                         help="end date of search period")
 
     my_args = parser.parse_args(args_array)
@@ -275,6 +275,14 @@ def get_tiles(ds, width=256, height=256):
         window = windows.Window(col_off=col_off, row_off=row_off, width=width, height=height).intersection(big_window)
         transform = windows.transform(window, ds['transform'])
         yield window, transform
+
+
+def deg2num(lat_deg, lon_deg, zoom):
+    lat_rad = math.radians(lat_deg)
+    n = 2.0 ** zoom
+    xtile = int((lon_deg + 180.0) / 360.0 * n)
+    ytile = int((1.0 - math.asinh(math.tan(lat_rad)) / math.pi) / 2.0 * n)
+    return (xtile, ytile)
 
 
 def _tile_span(tile_matrix, meters_per_unit):

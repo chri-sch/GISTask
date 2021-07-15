@@ -12,7 +12,8 @@ def download_buildings(args):
     :return:
     """
 
-    bbox = {'north': 47.109626, 'south': 47.003436, 'east': 15.506172, 'west': 15.370560}
+    # bbox = {'north': 47.109626, 'south': 47.003436, 'east': 15.506172, 'west': 15.370560}
+    bbox = {'north': 57.149, 'south':  45.225, 'east': -9.599, 'west': 28.734}
     tags = {'building': True}
 
     create_path(args.output_path)

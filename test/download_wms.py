@@ -8,6 +8,9 @@ import numpy as np
 import os
 import sys
 from osgeo import gdal, osr
+import sys
+from pathlib import Path
+
 
 from helperFunctions.gen_functions import getargs, create_path
 
@@ -28,6 +31,24 @@ def download_wms(args):
     5220046.445764463
     &layers=Gelaendehoehe_Gesamtmodell&width=1682&height=849&format=image/bmp
     """
+
+    folder_path = r"C:\temp"
+    BASE_PATH = r"C:\temp2"
+    folder = Path(folder_path)
+
+    l = []
+    for f in folder.glob('**/*.tif'):
+        f_path = f.as_posix()
+        l.append(f_path)
+
+    tile_files = [f for f in folder.glob('**/*.tif')]
+
+    vrt_path = os.path.join(BASE_PATH, 'prov_vrt.vrt')
+    vrt = gdal.BuildVRT(vrt_path, l)
+
+    result = os.path.join(BASE_PATH, 'merged.tif')
+    gdal.Translate(result, vrt, format='GTiff')
+
 
     print(list(wms.contents))
     print()
@@ -72,15 +93,14 @@ def download_wms(args):
     # layer = '0'
     # crs = 'EPSG:3857'
 
-    bbox_area = (-13558322.745501576, 4472774.727182063, -13266994.935942067, 4641770.884737643)
-    bbox = (-13290102.003279826, 4507448.700980318, -13287994.787972087, 4508671.074123097)
-    # x_min = -13500459.17589963228
-    # y_min = 4390566.548064288683
-    # x_max = -13496336.61993281916
-    # y_max = 4392957.998845293187
+    # bbox_area = (-13558322.745501576, 4472774.727182063, -13266994.935942067, 4641770.884737643)
+    # bbox = (-13290102.003279826, 4507448.700980318, -13287994.787972087, 4508671.074123097)
+    bbox_area = (-121.640253234, 37.557678957, -120.821346156, 37.952205699)
+    bbox = (-121.640253234, 37.557678957, -120.821346156, 37.952205699)
     size = (1569, 911)
     layer = '0'
     crs = 'EPSG:3857'
+    crs = 'EPSG:4326'
 
     width = abs(bbox[2] - bbox[0])
     height = abs(bbox[3] - bbox[1])
@@ -93,9 +113,8 @@ def download_wms(args):
         for x_width in np.arange(bbox_area[0], bbox_area[2], width):
             subset_box = (x_width, y_width, x_width + width, y_width + height)
 
-            print(f"width {subset_box[2] - subset_box[0]}, height {subset_box[3] - subset_box[1]}")
-
             print(subset_box)
+            print(width, height)
             img = wms.getmap(
                 layers=[layer],
                 srs=crs,
@@ -107,11 +126,10 @@ def download_wms(args):
             )
 
             # create transformation based on bounding box parameters
-            transform, transform_width, transform_height = calculate_default_transform(crs, crs, size[0], size[1],
-                                                                                       *subset_box)
+            # transform, transform_width, transform_height = calculate_default_transform(crs, crs, size[0], size[1],
+            #                                                                            *subset_box)
 
-            transfrom_2 = rasterio.transform.from_bounds(*subset_box, size[0], size[1])
-
+            transform = rasterio.transform.from_bounds(*subset_box, size[0], size[1])
 
             with MemoryFile(img) as memfile:
                 with memfile.open() as dataset:
@@ -123,11 +141,12 @@ def download_wms(args):
                         'width': dataset.meta['width'],
                         'height': dataset.meta['height']
                     })
-                    # show(dataset)
-                    fn = 'D:/temp/new_raster.tif'
+                    show(dataset)
+                    fn = 'C:/temp/new_raster.tif'
                     driver = gdal.GetDriverByName('GTiff')
                     data_array = dataset.read()
-                    ds = driver.Create(fn, xsize=size[0], ysize=size[1], bands=3, eType=gdal.GDT_Float32)
+                    print(size[0], size[1])
+                    ds = driver.Create(fn, xsize=size[0], ysize=size[1], bands=3, eType=gdal.GDT_Byte)
                     ds.GetRasterBand(1).WriteArray(data_array[0, :, :])
                     ds.GetRasterBand(2).WriteArray(data_array[1, :, :])
                     ds.GetRasterBand(3).WriteArray(data_array[2, :, :])
@@ -144,7 +163,6 @@ def download_wms(args):
                     with rasterio.open(file, 'w', **meta_data) as outds:
                         outds.write(dataset.read())
 
-                    sys.exit(0)
             i += 1
 
 
