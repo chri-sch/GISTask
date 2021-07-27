@@ -38,6 +38,18 @@ def getargs(args_array=sys.argv[1:]):
                         default=os.path.join(default_path, 'input'),
                         help="set input path")
 
+    parser.add_argument("--input_file",
+                        # action="store_true",
+                        dest="input_file",
+                        default=os.path.join(default_path, 'input'),
+                        help="set input file")
+
+    parser.add_argument("--input_geo_file",
+                        # action="store_true",
+                        dest="input_geo_file",
+                        default=os.path.join(default_path, 'input geo file'),
+                        help="set input geo file")
+
     parser.add_argument("--max_cloud_cover",
                         # action="store_true",
                         dest="max_cloud_cover",
@@ -292,3 +304,20 @@ def _tile_span(tile_matrix, meters_per_unit):
     tile_span_x = tile_matrix.tilewidth * pixel_span
     tile_span_y = tile_matrix.tileheight * pixel_span
     return tile_span_x, tile_span_y
+
+
+def add_bbox_transformation(in_file, out_file, bbox):
+    with rasterio.open(in_file) as src:
+        print(f"  create file: {out_file}")
+
+        transform = rasterio.transform.from_bounds(*bbox, src.width, src.height)
+
+        meta_data = src.meta.copy()
+        meta_data.update({
+            'crs': 'EPSG:4326',
+            'transform': transform,
+            'driver': 'GTiff'
+        })
+
+        with rasterio.open(out_file, 'w', **meta_data) as dst:
+            dst.write(src.read())

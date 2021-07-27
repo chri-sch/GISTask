@@ -19,7 +19,7 @@ def download_wms(args):
     url = 'https://gis.stmk.gv.at/arcgis/services/OGD/ALSGelaendeinformation_1m_UTM33N/MapServer/WMSServer'
     # url = 'https://data.wien.gv.at/daten/geo?version=1.3.0'
     url = 'https://map.dfg.ca.gov/arcgis/services/Base_Remote_Sensing/NAIP_2020/ImageServer/WMSServer'
-    wms = WebMapService(url)
+    wms = WebMapService(url, username="chritshci")
 
     """
     https://gis.stmk.gv.at/arcgis/services/OGD/ALSGelaendeinformation_1m_UTM33N/MapServer/WMSServer?service
