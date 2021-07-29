@@ -49,7 +49,7 @@ def add_transformation(args):
 
             print(f"add projection to {processed_file}")
             if not os.path.isfile(processed_file_out):
-                add_bbox_transformation(in_file=merged_file, out_file=processed_file_out, bbox=bbox)
+                add_bbox_transformation(in_file=processed_file, out_file=processed_file_out, bbox=bbox)
 
     quad_keys.apply(add_projection, path=file_path, axis=1)
 
