@@ -60,7 +60,7 @@ def getargs(args_array=sys.argv[1:]):
                         # action="store_true",
                         dest="user",
                         default="chri",
-                        help="earth explorer user name")
+                        help="name")
 
     parser.add_argument("--dataset",
                         # action="store_true",
@@ -72,7 +72,13 @@ def getargs(args_array=sys.argv[1:]):
                         # action="store_true",
                         dest="pwd",
                         default="B5tE86F9QVBiN8V",
-                        help="earth explorer password")
+                        help="password")
+
+    parser.add_argument("--host",
+                        # action="store_true",
+                        dest="host",
+                        default="postgres-wca2.mlteam-prod.aws.bshrk.net",
+                        help="database host address")
 
     parser.add_argument("--relative_path",
                         # action="store_true",
