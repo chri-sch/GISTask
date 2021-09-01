@@ -2,9 +2,24 @@ import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 from cartopy.io.ogc_clients import WMTSRasterSource
+from owslib.wmts import WebMapTileService
 
+import requests
+from requests.auth import HTTPBasicAuth
 
 def main():
+    url = 'https://securewatch.maxar.com/earthservice/wmtsaccess?connectId=1b947d5d-2e2b-404a-ae60-b10802511e80&LAYER=DigitalGlobe:ImageryTileService&featureProfile=Vivid_2020'
+    wmts = WebMapTileService(url=url, username='shs@blackshark.ai', password='f+pd2fDKxEJ6J7bB')
+
+    requests.get(url=url, auth=HTTPBasicAuth('shs@blackshark.ai', 'f+pd2fDKxEJ6J7bB'))
+
+    wmts.gettile(layer="DigitalGlobe:ImageryTileService",
+                 tilematrixset="EPSG:3857",
+                 tilematrix="EPSG:3857:12",
+                 row=1550, column=3372)
+    print()
+
+
     # url = 'https://map1c.vis.earthdata.nasa.gov/wmts-geo/wmts.cgi'
     # url = 'https://gis.stmk.gv.at/arcgis/rest/services/OGD/FranziszeischerKatasterSteiermark/MapServer/WMTS/'
     url = 'https://basemap.at/wmts/1.0.0/WMTSCapabilities.xml'

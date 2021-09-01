@@ -3,10 +3,10 @@ from itertools import product
 import rasterio as rio
 from rasterio import windows
 
-in_path = 'C:/_data/vexcel/_subsets/_wmts/compressed/'
-input_filename = '_merged.tif'
+in_path = r'C:\_data\vexcel\orlando\fill'
+input_filename = 'orlando_ortho-nir_bluesky-ultra1.tif'
 
-out_path = 'D:/PycharmProjects/GISTask/output/tiles/'
+out_path = r'C:\temp'
 output_filename = 'tile_{}-{}.tif'
 
 
@@ -21,14 +21,16 @@ def get_tiles(ds, width=256, height=256):
 
 
 with rio.open(os.path.join(in_path, input_filename)) as inds:
-    tile_width, tile_height = 1000, 1000
+    tile_width, tile_height = 70000, 70000
 
     meta = inds.meta.copy()
+    meta.update(compress='deflate')
+    # meta.update(BIGTIFF="IF_SAFER")
 
-    for window, transform in get_tiles(inds):
+    for window, transform in get_tiles(inds, width=tile_width, height=tile_height):
         print(window)
         meta['transform'] = transform
         meta['width'], meta['height'] = window.width, window.height
         outpath = os.path.join(out_path, output_filename.format(int(window.col_off), int(window.row_off)))
-        with rio.open(outpath, 'w', **meta) as outds:
+        with rio.open(outpath, 'w', **meta, BIGTIFF='YES') as outds:
             outds.write(inds.read(window=window))
