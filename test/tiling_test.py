@@ -6,8 +6,8 @@ from rasterio import windows
 in_path = r'C:\_data\vexcel\orlando\fill'
 input_filename = 'orlando_ortho-nir_bluesky-ultra1.tif'
 
-out_path = r'C:\temp'
-output_filename = 'tile_{}-{}.tif'
+out_path = r'E:\vexcel\orlando\ortho-nir'
+output_filename = 'orlando_ortho-nir_bluesky-ultra_{}-{}.tif'
 
 
 def get_tiles(ds, width=256, height=256):
@@ -21,7 +21,7 @@ def get_tiles(ds, width=256, height=256):
 
 
 with rio.open(os.path.join(in_path, input_filename)) as inds:
-    tile_width, tile_height = 70000, 70000
+    tile_width, tile_height = 75000, 75000
 
     meta = inds.meta.copy()
     meta.update(compress='deflate')

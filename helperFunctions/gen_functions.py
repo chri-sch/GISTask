@@ -7,6 +7,7 @@ from rasterio.warp import calculate_default_transform, Resampling, reproject
 from itertools import product
 from rasterio import windows
 import math
+import numpy as np
 
 # Standard pixel size of 0.28 mm as defined by WMTS.
 METERS_PER_PIXEL = 0.28e-3
@@ -43,6 +44,18 @@ def getargs(args_array=sys.argv[1:]):
                         dest="input_file",
                         default=os.path.join(default_path, 'input'),
                         help="set input file")
+
+    parser.add_argument("--aws_access_key_id",
+                        # action="store_true",
+                        dest="aws_access_key_id",
+                        default="",
+                        help="set aws access_key id")
+
+    parser.add_argument("--aws_secret_access_key",
+                        # action="store_true",
+                        dest="aws_secret_access_key",
+                        default="",
+                        help="set aws secret access_key")
 
     parser.add_argument("--input_geo_file",
                         # action="store_true",
@@ -327,3 +340,54 @@ def add_bbox_transformation(in_file, out_file, bbox):
 
         with rasterio.open(out_file, 'w', **meta_data) as dst:
             dst.write(src.read())
+
+
+def num2deg(xtile, ytile, zoom):
+    n = 2.0 ** zoom
+    long_deg = xtile / n * 360.0 - 180.0
+    lat_rad = math.atan(math.sinh(math.pi * (1 - 2 * ytile/n)))
+    lat_deg = lat_rad * 180.0 / math.pi
+
+    return long_deg, lat_deg
+
+
+def resample_raster_new(InputRasterFile,OutputRasterFile,XResolution,YResolution=None,Format="ENVI"):
+
+    """
+    Description goes here...
+
+    MDH
+
+    """
+
+    # import modules
+    import rasterio, affine
+    from rasterio.warp import reproject, Resampling
+
+    # read the source raster
+    with rasterio.open(InputRasterFile) as src:
+        Array = src.read()
+        OldResolution = src.res
+
+        #setup output resolution
+        if YResolution == None:
+            YResolution = XResolution
+        NewResolution = (XResolution,YResolution)
+
+
+        # setup the transform to change the resolution
+        XResRatio = OldResolution[0]/NewResolution[0]
+        YResRatio = OldResolution[1]/NewResolution[1]
+        NewArray = np.empty(shape=(Array.shape[0], int(round(Array.shape[1] * XResRatio)), int(round(Array.shape[2] * YResRatio))))
+        Aff = src.affine
+        NewAff = affine.Affine(Aff.a/XResRatio, Aff.b, Aff.c, Aff.d, Aff.e/YResRatio, Aff.f)
+
+        # reproject the raster
+        reproject(Array, NewArray, src_transform=Aff, dst_transform=NewAff, src_crs = src.crs, dst_crs = src.crs, resample=Resampling.bilinear)
+
+        # write results to file
+        with rasterio.open(OutputRasterFile, 'w', driver=src.driver, \
+                            height=NewArray.shape[1],width=NewArray.shape[2], \
+                            nodata=src.nodata,dtype=str(NewArray.dtype), \
+                            count=src.count,crs=src.crs,transform=NewAff) as dst:
+            dst.write(NewArray)
