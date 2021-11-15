@@ -8,6 +8,7 @@ from itertools import product
 from rasterio import windows
 import math
 import numpy as np
+from osgeo import gdal
 
 # Standard pixel size of 0.28 mm as defined by WMTS.
 METERS_PER_PIXEL = 0.28e-3
@@ -72,7 +73,7 @@ def getargs(args_array=sys.argv[1:]):
     parser.add_argument("--user",
                         # action="store_true",
                         dest="user",
-                        default="chri",
+                        default="labeling",
                         help="name")
 
     parser.add_argument("--dataset",
@@ -84,7 +85,7 @@ def getargs(args_array=sys.argv[1:]):
     parser.add_argument("--pwd",
                         # action="store_true",
                         dest="pwd",
-                        default="B5tE86F9QVBiN8V",
+                        default="FJbq6z9h78wNPNnm",
                         help="password")
 
     parser.add_argument("--host",
@@ -391,3 +392,15 @@ def resample_raster_new(InputRasterFile,OutputRasterFile,XResolution,YResolution
                             nodata=src.nodata,dtype=str(NewArray.dtype), \
                             count=src.count,crs=src.crs,transform=NewAff) as dst:
             dst.write(NewArray)
+
+    def calculate_slope(DEM):
+        gdal.DEMProcessing('slope.tif', DEM, 'slope')
+        with rasterio.open('slope.tif') as dataset:
+            slope = dataset.read(1)
+        return slope
+
+    def calculate_aspect(DEM):
+        gdal.DEMProcessing('aspect.tif', DEM, 'aspect')
+        with rasterio.open('aspect.tif') as dataset:
+            aspect = dataset.read(1)
+        return aspect

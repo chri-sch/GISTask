@@ -1,8 +1,8 @@
 import up42
 from helperFunctions.gen_functions import getargs
-from sqlalchemy import create_engine
 import psycopg2
 import geopandas as gpd
+import pandas as pd
 import os
 import sys
 
@@ -13,7 +13,11 @@ def download_up42_scenes(args):
     sql = "select id, bounding_box from ml_ops.labeling_roi where id = 131"
     aoi = gpd.GeoDataFrame.from_postgis(sql, con, geom_col='bounding_box')
 
-    quick_looks = False
+    aoi = gpd.read_file(os.path.join(args.input_path, "chicago_ohare_airport.gpkg"), layer="chicago_ohare_airport")
+
+    quick_looks = True
+    workflow_name = "fetch-pleades-scene_graz-airport"
+    workflow_name = "fetch-pleades-chicago-airport"
 
     """
         up42 part
@@ -26,7 +30,7 @@ def download_up42_scenes(args):
 
     search_parameters = catalog.construct_parameters(geometry=aoi,
                                                      start_date="2018-01-01",
-                                                     end_date="2020-12-31",
+                                                     end_date="2021-12-31",
                                                      sensors=["pleiades"],
                                                      # sensors=["spot"],
                                                      max_cloudcover=5,
@@ -34,6 +38,13 @@ def download_up42_scenes(args):
                                                      limit=50)
 
     search_results = catalog.search(search_parameters=search_parameters)
+    search_results['date_time'] = pd.to_datetime(search_results.acquisitionDate)
+
+    # filter month
+    search_results = search_results[(search_results.date_time.dt.month > 4) & (search_results.date_time.dt.month < 10)]
+
+    # just use best resolution
+    search_results = search_results[search_results.resolution <= 0.5]
 
     # Download & visualize quicklooks
     if quick_looks:
@@ -45,6 +56,8 @@ def download_up42_scenes(args):
     search_results['incidenceAngleAlongTrack'] = search_results.providerProperties.apply(
         lambda x: x['incidenceAngleAlongTrack'])
     search_results.sort_values(by=['cloudCoverage', 'incidenceAngle'], inplace=True)
+    # search_results.sort_values(by=['incidenceAngle'], inplace=True)
+    # search_results.sort_values(by=['date_time'], ascending=False, inplace=True)
     search_results = search_results.reset_index(drop=True)
 
     # convert list objects to string to be able to export dataframe as gpkg
@@ -53,18 +66,19 @@ def download_up42_scenes(args):
     df['up42:usageType'] = search_results['up42:usageType'].astype(str)
     df['providerProperties'] = search_results.providerProperties.astype(str)
     # df.to_file(os.path.join(args.output_path, "up42", "meta_scenes.gpkg"), layer="meta_scenes", driver="GPKG")
-    print(f" Scene Id of selected scene: {search_results.loc[0].sceneId}")
+
+    print(f" Scene Id of selected scene: {search_results.loc[1]}")
 
     # create a new, empty up42 workflow and add a task
     project = up42.initialize_project()
-    workflow = project.create_workflow(name="fetch-pleades-scene", use_existing=True)
+    workflow = project.create_workflow(name=workflow_name, use_existing=True)
     workflow.add_workflow_tasks(["Pléiades Display (Download)", "DIMAP -> GeoTIFF Conversion"])
     # workflow.add_workflow_tasks(["Pléiades Display (Download)"])
 
     # Define the workflow parameters and select which scene from the catalog search results to download.
     input_parameters = workflow.construct_parameters(geometry=aoi,
                                                      geometry_operation="bbox",
-                                                     scene_ids=[search_results.loc[0].sceneId])
+                                                     scene_ids=[search_results.loc[1].sceneId])
     # update parameters
     input_parameters['oneatlas-pleiades-display:1'].update({"max_cloud_cover": 5})
 
@@ -75,7 +89,7 @@ def download_up42_scenes(args):
     test_job = workflow.test_job(input_parameters=input_parameters, track_status=True)
     test_results = test_job.get_results_json()
 
-    sys.exit(0)
+    # sys.exit(0)
 
     # Run the workflow as a job
     job = workflow.run_job(input_parameters, track_status=True)
